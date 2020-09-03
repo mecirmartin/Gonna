@@ -1,43 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { Component } from 'react';
 import Grid from '@material-ui/core/Grid';
-import axios from 'axios';
-import Event from '../components/Event';
+import EventCard from '../components/EventCard';
+import Eventadder from '../components/Eventadder';
+import PropTypes from 'prop-types';
+import EventSkeleton from '../util/EventSkeleton';
 
-const Home = () => {
-  const [state, setState] = useState({});
+import { connect } from 'react-redux';
+import { getEvents } from '../redux/actions/dataActions';
 
-  useEffect(() => {
-    const fetcher = async () => {
-      try {
-        const token = localStorage.getItem('FBIdToken');
-        const res = axios.post('events', token);
-        console.log(res.data);
-        setState({
-          events: res.data,
-        });
-      } catch (err) {
-        console.log(err);
-      }
-    };
+class Home extends Component {
+  componentDidMount() {
+    this.props.getEvents();
+  }
+  render() {
+    const { events, loading } = this.props.data;
 
-    fetcher();
-  }, []);
-
-  let recentEvents = state.events ? (
-    state.events.map((event) => <Event event={event} />)
-  ) : (
-    <p>Loading something....</p>
-  );
-  return (
-    <Grid container spacing={8}>
-      <Grid item sm={8} xs={12}>
-        {recentEvents}
+    let recentEvents = !loading ? (
+      events.map((event) => <EventCard key={event.eventId} event={event} />)
+    ) : (
+      <EventSkeleton />
+    );
+    return (
+      <Grid container spacing={10}>
+        <Grid item sm={8} xs={12}>
+          {recentEvents}
+        </Grid>
+        <Grid item sm={4} xs={12}>
+          {!loading && <Eventadder />}
+        </Grid>
       </Grid>
-      <Grid item sm={4} xs={12}>
-        <p>Profile...</p>
-      </Grid>
-    </Grid>
-  );
+    );
+  }
+}
+
+Home.propTypes = {
+  getEvents: PropTypes.func.isRequired,
+  data: PropTypes.object.isRequired,
 };
 
-export default Home;
+const mapStateToProps = (state) => ({
+  data: state.data,
+});
+
+export default connect(mapStateToProps, { getEvents })(Home);
